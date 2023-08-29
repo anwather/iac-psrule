@@ -1,0 +1,15 @@
+configuration:
+  AZURE_BICEP_FILE_EXPANSION: true
+
+# Configure binding options
+binding:
+  targetName:
+    - ResourceName
+    - name
+  targetType:
+    - ResourceType
+    - type
+
+rule:
+  include:
+    - Azure.Policy.*

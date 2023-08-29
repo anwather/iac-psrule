@@ -1,0 +1,25 @@
+trigger:
+  - main
+
+pool:
+  vmImage: "ubuntu-latest"
+
+steps:
+  - task: AzurePowerShell@5
+    inputs:
+      azureSubscription: "AzureServiceConnection" # Update with your service connection name
+      ScriptType: "InlineScript"
+      pwsh: true
+      azurePowerShellVersion: "LatestVersion"
+      Inline: |
+        Install-Module Az.ResourceGraph -Force -Verbose
+        Install-Module PSRule.Rules.Azure -Scope CurrentUser -AllowPrerelease -Force -Verbose
+        Install-Module EnterprisePolicyAsCode -Scope CurrentUser -Force -Verbose
+        Export-AzPolicyResources -DefinitionsRootFolder ./ -Mode psrule -OutputFolder ./
+        Export-AzPolicyAssignmentRuleData -AssignmentFile ./psrule.assignment.json -OutputPath ./.ps-rule/policy-rules.Rule.jsonc -ErrorAction SilentlyContinue
+        Assert-PSRule -InputPath ./ -Module "PSRule.Rules.Azure" -Format File -OutputFormat NUnit3 -OutputPath results.xml -ErrorAction SilentlyContinue
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: "NUnit"
+      testResultsFiles: "**/results.xml"
+      searchFolder: "$(System.DefaultWorkingDirectory)"
